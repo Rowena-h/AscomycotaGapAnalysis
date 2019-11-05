@@ -4,7 +4,7 @@ setwd("~/Kew/Ascomycota/Gap analyses")
 
 library(ape)
 library(ggplot2)
-require(gridExtra)
+library(gridExtra)
 library(ggstance)
 library(ggtree)
 library(colorspace)
@@ -83,6 +83,38 @@ outliers <- boxplot(CS.df2$size, plot=FALSE)$out
 CS.df2.out <- CS.df2
 #Make dataframe excluding outliers
 CS.df2 <- CS.df2[-which(CS.df2$size %in% outliers),]
+
+
+##Test significant difference of mean for each order##
+
+#Create vector of orders with both CS and no CS data
+both.orders <- as.vector(unique(no.CS.df2$order)[!is.na(match(as.vector(unique(no.CS.df2$order)), as.vector(unique(CS.df2$order))))])
+#Create dataframe for results
+sig <- data.frame(order=both.orders, pvalue=NA)
+
+#Significance testing
+for (i in 1:length(both.orders)) {
+  print(both.orders[i])
+  x <- no.CS.df2$size[no.CS.df2$order == both.orders[i]]
+  y <- CS.df2$size[CS.df2$order == both.orders[i]]
+  
+  #Test for normality of data
+  shapiro.x <- shapiro.test(x)
+  shapiro.y <- shapiro.test(y)
+  
+  #Reject normality if p-value < 0.05 and do Wilcoxon, otherwise do t-test
+  if (shapiro.x$p.value < 0.05 || shapiro.y$p.value < 0.05) {
+    print("Reject normality, doing Wilcoxon test")
+    wilcox <- wilcox.test(x=x, y=y, mu=0)
+    sig$pvalue[i] <- wilcox$p.value
+  } else {
+    print("Normal data, doing t-test")
+    ttest <- t.test(x=x, y=y, mu=0)
+    sig$pvalue[i] <- ttest$p.value
+  }
+}
+
+print(sig)
 
 
 ##Generate Ascomycota order-level phylogeny for side by side plot##
@@ -173,6 +205,10 @@ counts[,"noCScount"] <- paste0("(", unlist(counts[,"noCScount"]),")")
 counts[,"noCScount.out"] <- paste0("(", unlist(counts[,"noCScount.out"]),")")
 counts[,"CScount"] <- paste0("(", unlist(counts[,"CScount"]),")")
 counts[,"CScount.out"] <- paste0("(", unlist(counts[,"CScount.out"]),")")
+#Add asterisk to orders with significant difference of means
+for (i in 1:length(as.vector(sig$order[sig$pvalue < 0.05]))) {
+  counts$noCScount[counts$order == as.vector(sig$order[sig$pvalue < 0.05])[i]] <- paste0(counts$noCScount[counts$order == as.vector(sig$order[sig$pvalue < 0.05])[i]]," *")
+}
 
 #Add column with the upper limit per order, with and without outliers included
 counts["noCSmax"] <- NA
