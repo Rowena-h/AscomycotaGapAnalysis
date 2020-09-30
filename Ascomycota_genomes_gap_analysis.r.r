@@ -2,21 +2,20 @@
 ##This script uses some webpage scraping, so results will differ as new data becomes available##
 
 library(ape)
-library(rvest)
-library(magrittr)
 library(DescTools)
+library(rvest)
 library(ggplot2)
-library(gridExtra)
+library(ggpubr)
 library(ggstance)
 library(ggtree)
-library(colorspace)
-library(gtable)
-library(scales)
 library(grid)
-library(RCurl)
-library(stringr)
+library(gridExtra)
+library(gtable)
 library(multcompView)
-library(ggpubr)
+library(RCurl)
+library(scales)
+library(stringr)
+
 
 ##MAIN FIGURE##
 
@@ -1224,6 +1223,12 @@ dev.off()
 supp.table <- unique(rbind(spec.df[3:4], data.frame(method=spec.x.df[3], type="CS")))
 
 write.csv(supp.table, "supp_table1.csv", row.names=FALSE)
+
+#Number/proportion of orders without assembly-based genome size data
+paste0(length(tax.df3$order[tax.df3$CS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$CS == "N"])) / length(tax.df3$order) * 100,"%")
+
+#Number/proportion of classes without assembly-based genome size data
+paste0(length(class.df[-20,]$class[class.df[-20,]$CS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$CS == "N"])) / length(class.df[-20,]$class) * 100,"%")
 
 #Number/proportion of orders without cytometric genome size data
 paste0(length(tax.df3$order[tax.df3$noCS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$noCS == "N"])) / length(tax.df3$order) * 100,"%")
