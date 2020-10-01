@@ -38,6 +38,30 @@ asc.tree <- as.phylo(~Phylum/Class/Order, data=tax.df2)
 df <- read.csv("fungi_genome_sizes.csv")
 #Subset genome size dataframe for just Ascomycota
 asc.df <- subset(df, PHYLUM == "Ascomycota")
+#Add estimates from Le Cam et al 2019
+lecam <- read.csv("lecam_etal_2019.csv")
+asc.df <- rbind(asc.df, lecam)
+#Fix genus and species names for unknown (sp.) taxa
+for (i in 1:length(asc.df$GENUS)) {
+  if(length(grep("\\bsp\\.", asc.df$GENUS[i])) > 0) {
+    asc.df$GENUS[i] <- sub(" sp\\.", "", asc.df$GENUS[i])
+    asc.df$SPECIES[i] <- "sp."
+  }
+}
+#Find genera that don't match current classification to check for species synonyms
+sort(unique(paste(asc.df$GENUS, asc.df$SPECIES)[is.na(match(asc.df$GENUS, tax.df$Genus))]))
+#Read in classification corrections
+corrections <- read.csv("name_check.csv")
+#For each species...
+for (i in 1:length(asc.df$SPECIES)) {
+  #If the species name matches the list of name to correct..
+  if (length(grep(paste(asc.df$GENUS[i], asc.df$SPECIES[i]), corrections$Old)) > 0) {
+    idx <- grep(paste(asc.df$GENUS[i], asc.df$SPECIES[i]), corrections$Old)
+    #Replace the genus and species names with the current names
+    asc.df$GENUS[i] <- unlist(str_split(corrections$Current[idx], " "))[1]
+    asc.df$SPECIES[i] <- unlist(str_split(corrections$Current[idx], " "))[2]
+  }
+}
 #Create vector of method to exclude (genome assembly, unreliable or unknown methods)
 exclude <- c("CS", "genomic reconstruction", "", "CHEF gel electrophoresis", "DAPI-PC", "DAPI-IC", "PFGE", "CS and PFGE", "quantitative real-time PCR", "Re-association kinetics", "Integrated Physical/Genetic Map")
 #Remove genome size data for these methods
@@ -75,6 +99,10 @@ no.CS.df2 <- data.frame(order=names(no.CS.taxa), size=no.CS.taxa)
 mean(no.CS.df2$size)
 #Number of species included
 length(unique(paste0(no.CS.df$GENUS, no.CS.df$SPECIES)))
+#Number/proportion of orders without cytometric genome size data
+paste0(length(tax.df3$order[tax.df3$noCS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$noCS == "N"])) / length(tax.df3$order) * 100,"%")
+#Number/proportion of classes without cytometric genome size data
+paste0(length(class.df[-20,]$class[class.df[-20,]$noCS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$noCS == "N"])) / length(class.df[-20,]$class) * 100,"%")
 
 
 ##Assembly-based genome size data##
@@ -144,6 +172,10 @@ CS.orders <- as.vector(unique(CS.df2$order))
 mean(CS.df2$size)
 #Number of strains included
 length(unique(c(ncbi$X.Organism.Name, myc$Name)))
+#Number/proportion of orders without assembly-based genome size data
+paste0(length(tax.df3$order[tax.df3$CS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$CS == "N"])) / length(tax.df3$order) * 100,"%")
+#Number/proportion of classes without assembly-based genome size data
+paste0(length(class.df[-20,]$class[class.df[-20,]$CS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$CS == "N"])) / length(class.df[-20,]$class) * 100,"%")
 
 
 ##Test significant difference of mean for each order##
@@ -1217,22 +1249,3 @@ gg.spec.supp <- annotate_figure(gg.spec.supp,
 tiff(file=paste0("speccomparisonsuppfig_", Sys.Date(), ".tiff"), height=12, width=8, units="in", res=300)
 plot(gg.spec.supp)
 dev.off()
-
-
-#Make table of methods
-supp.table <- unique(rbind(spec.df[3:4], data.frame(method=spec.x.df[3], type="CS")))
-
-write.csv(supp.table, "supp_table1.csv", row.names=FALSE)
-
-#Number/proportion of orders without assembly-based genome size data
-paste0(length(tax.df3$order[tax.df3$CS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$CS == "N"])) / length(tax.df3$order) * 100,"%")
-
-#Number/proportion of classes without assembly-based genome size data
-paste0(length(class.df[-20,]$class[class.df[-20,]$CS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$CS == "N"])) / length(class.df[-20,]$class) * 100,"%")
-
-#Number/proportion of orders without cytometric genome size data
-paste0(length(tax.df3$order[tax.df3$noCS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$noCS == "N"])) / length(tax.df3$order) * 100,"%")
-
-#Number/proportion of classes without cytometric genome size data
-paste0(length(class.df[-20,]$class[class.df[-20,]$noCS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$noCS == "N"])) / length(class.df[-20,]$class) * 100,"%")
-
