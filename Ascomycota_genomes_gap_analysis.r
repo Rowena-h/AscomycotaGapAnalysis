@@ -22,7 +22,7 @@ library(stringr)
 ##Generate Ascomycota order-level phylogeny for side by side plot##
 
 #Read in Ascomycota taxonomy (from Wijayawardene et al. 2018)
-tax.df <- read.csv("Ascomycota outline 2017.csv", stringsAsFactors=TRUE)
+tax.df <- read.csv("data/Ascomycota outline 2017.csv", stringsAsFactors=TRUE)
 #Add phylum column
 tax.df$Phylum <- as.factor("Ascomycota")
 #Remove incertae sedis orders
@@ -35,11 +35,11 @@ asc.tree <- as.phylo(~Phylum/Class/Order, data=tax.df2)
 ##Cytometric genome size data (from http://www.zbi.ee/fungal-genomesize/, not from assemblies)##
 
 #Read in genome size data
-df <- read.csv("fungi_genome_sizes.csv")
+df <- read.csv("data/fungi_genome_sizes.csv")
 #Subset genome size dataframe for just Ascomycota
 asc.df <- subset(df, PHYLUM == "Ascomycota")
 #Add estimates from Le Cam et al 2019
-lecam <- read.csv("lecam_etal_2019.csv")
+lecam <- read.csv("data/lecam_etal_2019.csv")
 asc.df <- rbind(asc.df, lecam)
 #Fix genus and species names for unknown (sp.) taxa
 for (i in 1:length(asc.df$GENUS)) {
@@ -51,7 +51,7 @@ for (i in 1:length(asc.df$GENUS)) {
 #Find genera that don't match current classification to check for species synonyms
 sort(unique(paste(asc.df$GENUS, asc.df$SPECIES)[is.na(match(asc.df$GENUS, tax.df$Genus))]))
 #Read in classification corrections
-corrections <- read.csv("name_check.csv")
+corrections <- read.csv("data/name_check.csv")
 #For each species...
 for (i in 1:length(asc.df$SPECIES)) {
   #If the species name matches the list of name to correct..
@@ -238,7 +238,7 @@ branches <- data.frame(node=asc.tree$edge[,2],
                        edge_num=1:nrow(asc.tree$edge), 
                        branch_label=rep(NA,nrow(asc.tree$edge)))
 #Read in tree node labels for classes
-classnodes <- read.csv("classnodes.csv", header=TRUE)
+classnodes <- read.csv("data/classnodes.csv", header=TRUE)
 #Add class
 for (i in 1:length(classnodes$class)) {
   branches$branch_label[branches$edge_num == classnodes$node[i]] <- as.character(classnodes$class[i])
@@ -590,7 +590,7 @@ for (i in element.replace) {
   gg.main6 <- gtable_add_grob(gg.main6, dummy$grobs[[which(dummy$layout$name == i)]], pos$t, pos$l, pos$b, pos$r, name=i)
 }
 
-tiff(file=paste0("allgenomesplot_", Sys.Date(), ".tiff"), height=15, width=10, units="in", res=300)
+tiff(file=paste0("Fig1_ascgapanalysis_", Sys.Date(), ".tiff"), height=15, width=10, units="in", res=300)
 
 grid.draw(gg.main6)
 
@@ -698,7 +698,7 @@ gg.supp5 <- gtable_filter_remove(gg.supp.tab, name=elements[c(5, 7, 8, 10, 11, 1
 #Change widths of bar and box panels
 gg.supp5$widths[9] <- 0.1*gg.supp5$widths[9]
 
-tiff(file=paste0("genomesizeplot_outliers_", Sys.Date(), ".tiff"), height=15, width=10, units="in", res=300)
+tiff(file=paste0("SuppFig1_ascgapanalysisoutliers_", Sys.Date(), ".tiff"), height=15, width=10, units="in", res=300)
 
 grid.draw(gg.supp5)
 
@@ -785,7 +785,7 @@ all.methods.df$method[grep("//bgs", all.methods.df$method, ignore.case=TRUE)] <-
 all.methods.df$method <- gsub("_", " ", all.methods.df$method)
 
 #Make method names uniform
-assemblers <- read.csv("assemblers.csv", header=FALSE)$V1
+assemblers <- read.csv("data/assemblers.csv", header=FALSE)$V1
 for (i in assemblers) {
   all.methods.df$method[grep(paste0("\\b", i), all.methods.df$method, ignore.case=TRUE)] <- i
 }
@@ -1133,7 +1133,7 @@ for (i in stripr) {
 
 
 #Plot species-level comparison together
-tiff(file=paste0("speccomparisonfig_", Sys.Date(), ".tiff"), height=8, width=10, units="in", res=300)
+tiff(file=paste0("Fig2_speccomparison_", Sys.Date(), ".tiff"), height=8, width=10, units="in", res=300)
 grid.arrange(gg.spec1, gg.spec.x1, heights=c(1.1, 1))
 dev.off()
 
@@ -1246,6 +1246,6 @@ gg.spec.supp <- annotate_figure(gg.spec.supp,
                                 bottom=text_grob("Method of genome size inference"))
 
 #Write to file
-tiff(file=paste0("speccomparisonsuppfig_", Sys.Date(), ".tiff"), height=12, width=8, units="in", res=300)
+tiff(file=paste0("SuppFig2_speccomparisonextra_", Sys.Date(), ".tiff"), height=12, width=8, units="in", res=300)
 plot(gg.spec.supp)
 dev.off()
