@@ -1,4 +1,11 @@
-######Ascomycota genome gap analysis###########
+#########################################
+#########################################
+######                             ######
+######    Ascomycota Gap Analysis  ######
+######                             ######
+#########################################
+#########################################
+
 ##This script uses some webpage scraping, so results will differ as new data becomes available##
 
 library(ape)
@@ -17,7 +24,9 @@ library(scales)
 library(stringr)
 
 
-##MAIN FIGURE##
+##############
+## FIGURE 1 ##
+##############
 
 ##Generate Ascomycota order-level phylogeny for side by side plot##
 
@@ -32,12 +41,16 @@ tax.df2 <- tax.df[!duplicated(tax.df$Order),c(1:2,5)]
 #Make order level tree with dataframe
 asc.tree <- as.phylo(~Phylum/Class/Order, data=tax.df2)
 
+
 ##Cytometric genome size data (from http://www.zbi.ee/fungal-genomesize/, not from assemblies)##
 
 #Read in genome size data
 df <- read.csv("data/fungi_genome_sizes.csv")
 #Subset genome size dataframe for just Ascomycota
 asc.df <- subset(df, PHYLUM == "Ascomycota")
+#Correct size from original paper
+asc.df$X1C.in.Mbp[asc.df$FGSDID == 2788] <- 34.36
+asc.df$X1C.in.pg[asc.df$FGSDID == 2788] <- 0.035
 #Add estimates from Le Cam et al 2019
 lecam <- read.csv("data/lecam_etal_2019.csv")
 asc.df <- rbind(asc.df, lecam)
@@ -89,20 +102,6 @@ no.CS.res <- lapply(no.CS.res, function(x) x[!is.na(x)])
 no.CS.taxa <- setNames(unlist(no.CS.res, recursive=TRUE, use.names=FALSE), rep(names(no.CS.res), lengths(no.CS.res)))
 #Make dataframe of genome sizes for orders
 no.CS.df2 <- data.frame(order=names(no.CS.taxa), size=no.CS.taxa)
-#Identify outliers
-#outliers <- boxplot(no.CS.df2$size, plot=FALSE)$out
-#no.CS.df2.out <- no.CS.df2
-#Make dataframe excluding outliers
-#no.CS.df2 <- no.CS.df2[-which(no.CS.df2$size %in% outliers),]
-
-#Mean for cytometric methods
-mean(no.CS.df2$size)
-#Number of species included
-length(unique(paste0(no.CS.df$GENUS, no.CS.df$SPECIES)))
-#Number/proportion of orders without cytometric genome size data
-paste0(length(tax.df3$order[tax.df3$noCS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$noCS == "N"])) / length(tax.df3$order) * 100,"%")
-#Number/proportion of classes without cytometric genome size data
-paste0(length(class.df[-20,]$class[class.df[-20,]$noCS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$noCS == "N"])) / length(class.df[-20,]$class) * 100,"%")
 
 
 ##Assembly-based genome size data##
@@ -162,20 +161,6 @@ CS.df2 <- CS.df[!is.na(CS.df$order),]
 CS.df2 <- CS.df2[!grepl("incertae sedis", CS.df2$order),]
 #Make vector of orders
 CS.orders <- as.vector(unique(CS.df2$order))
-#Identify outliers
-#outliers <- boxplot(CS.df2$size, plot=FALSE)$out
-#CS.df2.out <- CS.df2
-#Make dataframe excluding outliers
-#CS.df2 <- CS.df2[-which(CS.df2$size %in% outliers),]
-
-#Mean for assembly methods
-mean(CS.df2$size)
-#Number of strains included
-length(unique(c(ncbi$X.Organism.Name, myc$Name)))
-#Number/proportion of orders without assembly-based genome size data
-paste0(length(tax.df3$order[tax.df3$CS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$CS == "N"])) / length(tax.df3$order) * 100,"%")
-#Number/proportion of classes without assembly-based genome size data
-paste0(length(class.df[-20,]$class[class.df[-20,]$CS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$CS == "N"])) / length(class.df[-20,]$class) * 100,"%")
 
 
 ##Test significant difference of mean for each order##
@@ -227,9 +212,6 @@ for (i in 1:length(both.filt)) {
   }
 }
 
-#Which orders have significantly bigger mean genome estimates from assembly
-sig[sig$CS > sig$noCS & sig$pvalue < 0.05,]
-
 
 ##Create plotting dataframes
 
@@ -280,15 +262,6 @@ CS.mean <- data.frame(x=mean(CS.df2$size), .panel="Genome size (Mbp/1C)", string
 no.CS.df3 <- no.CS.df2
 no.CS.df3$class <- tax.df2$Class[match(no.CS.df3$order,tax.df2$Order)]
 
-#Add class data to genome size dataframe (INCLUDING OUTLIERS)
-#no.CS.df3.out <- no.CS.df2.out
-#no.CS.df3.out["class"] <- tax.df2$Class[match(no.CS.df3.out$order,tax.df2$Order)]
-#Create a list of dataframes with means for each class
-#means.out <- list()
-#for (i in sort(truenoCS$class)) {
-#  means.out[[i]] <- data.frame(x=(mean(no.CS.df3.out[no.CS.df3.out$class==i,]$size)), .panel='Genome size (Mbp/1C)')
-#}
-
 #Create dataframe for adding sample size to plot
 counts.df <- tax.df3
 #Remove orders without genome size data
@@ -331,6 +304,7 @@ for (i in unique(CS.df2$order)) {
   counts.df[counts.df$order==i,]$CSmax.out <- max(CS.df2[CS.df2$order==i,]$size)
 }
 
+
 ##Number of genome assemblies##
 
 #Create data frame for number of genome assemblies per order
@@ -353,6 +327,7 @@ tips.df <- with(tips.df, label[order(y, decreasing=T)])
 tips.df <- data.frame(tip=tips.df, min=seq(length(tips.df))-0.5, max=seq(length(tips.df))+0.5, col=NA)
 tips.df$col <- rep_len(c(0,1),length(tips.df$tip))
 
+
 #Function to remove unwanted elements from plots (https://stackoverflow.com/questions/36779537/ggplot2-facet-wrap-y-axis-scale-on-the-first-row-only)
 gtable_filter_remove <- function (x, name, trim = TRUE){
   matches <- !(x$layout$name %in% name)
@@ -364,7 +339,7 @@ gtable_filter_remove <- function (x, name, trim = TRUE){
 }
 
 
-#Plot tree against number of genomes and CS/noCS genome sizes 
+##Plot tree against number of genomes and CS/noCS genome sizes## 
 
 #Dummy plot for correct scale of boxplot (not showing extreme outliers)
 gg.dummy <- ggtree(asc.tree) +
@@ -590,12 +565,16 @@ for (i in element.replace) {
   gg.main6 <- gtable_add_grob(gg.main6, dummy$grobs[[which(dummy$layout$name == i)]], pos$t, pos$l, pos$b, pos$r, name=i)
 }
 
+#Plot to file
+
 tiff(file=paste0("Fig1_ascgapanalysis_", Sys.Date(), ".tiff"), height=15, width=10, units="in", res=300)
-
 grid.draw(gg.main6)
-
 dev.off()
 
+
+############################
+## SUPPLEMENTARY FIGURE 1 ##
+############################
 
 #Supplementary figure including extreme outliers
 
@@ -698,20 +677,21 @@ gg.supp5 <- gtable_filter_remove(gg.supp.tab, name=elements[c(5, 7, 8, 10, 11, 1
 #Change widths of bar and box panels
 gg.supp5$widths[9] <- 0.1*gg.supp5$widths[9]
 
+#Plot to file
 tiff(file=paste0("SuppFig1_ascgapanalysisoutliers_", Sys.Date(), ".tiff"), height=15, width=10, units="in", res=300)
-
 grid.draw(gg.supp5)
-
 dev.off()
 
 
+##############
+## FIGURE 2 ##
+##############
 
-## SPECIES-LEVEL COMPARISON ##
-## FIGURE 2a ##
+## FIGURE 2A ##
 
 ##Identify case study species with both cytometric and assembly-based measurements
 #Add name field to genome size dataframe 
-no.CS.df$name <- paste0(no.CS.df$GENUS," ",no.CS.df$SPECIES)
+no.CS.df$name <- paste0(no.CS.df$GENUS, " ", no.CS.df$SPECIES)
 
 #Create an empty list for species with both cytometric and assembly-based 
 species.comp <- list()
@@ -792,11 +772,8 @@ for (i in assemblers) {
 
 #Add asterisk if reported method isn't known
 if (length(all.methods.df$method[is.na(match(all.methods.df$method, assemblers))]) > 0) {
-  all.methods.df$method[is.na(match(all.methods.df$method, assemblers)) & all.methods.df$type == "CS"] <- paste0(all.methods.df$method[is.na(match(all.methods.df$method, assemblers)) & all.methods.df$type == "CS"], "*")
+  all.methods.df$method[is.na(match(all.methods.df$method, assemblers)) & all.methods.df$type == "CS"] <- paste0("*", all.methods.df$method[is.na(match(all.methods.df$method, assemblers)) & all.methods.df$type == "CS"])
 }
-
-#Abbreviate methods
-#methods.df$method <-word(methods.df$method, 1)
 
 #For each species-level case study...
 for (i in 1:length(species.comp)) {
@@ -860,6 +837,9 @@ for (i in 1:length(unique(spec.df$species))) {
   spec.df$class[which(spec.df$species == unique(spec.df$species)[i])] <- as.character(tax.df$Class[grep(word(unique(spec.df$species), 1)[i], tax.df$Genus)])
 }
 
+#Set order of classes in legend
+spec.df$class <- factor(spec.df$class, levels=c("Eurotiomycetes", "Sordariomycetes", "Dothideomycetes"))
+
 #Facet boxplot of genome sizes for each species
 gg.spec <- ggplot(spec.df, aes(method, size)) +
   geom_hline(data=mean.df, 
@@ -894,10 +874,10 @@ gg.spec <- ggplot(spec.df, aes(method, size)) +
   scale_color_manual(labels=c("Genome assembly", "Cytometric"), values=c("black", "red")) +
   scale_fill_manual(values=classnodes$colour[match(sort(unique(spec.df$class)), classnodes$class)]) +
   guides(fill=guide_legend(override.aes=list(alpha=0.5))) +
-  labs(subtitle=expression(bold("a")), x="", y="Genome size (Mbp)", col="", fill="", size=2) +
+  labs(subtitle=expression(bold("A")), x="", y="Genome size (Mbp/1C)", col="", fill="", size=2) +
   theme(strip.text=element_text(face="bold.italic", size=8),
         axis.title.x=element_text(margin=margin(t=20, r=0, b=0, l=0)),
-        axis.title.y=element_text(margin=margin(t=0, r=20, b=0, l=0)),
+        axis.title.y=element_text(margin=margin(t=0, r=10, b=0, l=0)),
         axis.text.x=element_text(size=rel(0.7), angle=45, hjust=1),
         legend.position="top",
         legend.box="vertical",
@@ -931,7 +911,7 @@ for (i in stripr) {
 }
 
 
-## FIGURE 2b ##
+## FIGURE 2B ##
 
 #Identify case study species with a large range of sizes from assemblies
 species.comp.x <- list()
@@ -1066,6 +1046,9 @@ for (i in 1:length(unique(spec.x.df$species))) {
   spec.x.df$class[which(spec.x.df$species == unique(spec.x.df$species)[i])] <- as.character(tax.df$Class[grep(word(unique(spec.x.df$species), 1)[i], tax.df$Genus)])
 }
 
+#Set order of classes in legend
+spec.x.df$class <- factor(spec.x.df$class, levels=c("Sordariomycetes", "Dothideomycetes", "Saccharomycetes"))
+
 #Plot boxplots
 gg.spec.x <- ggplot(spec.x.df, aes(method, size)) +
   geom_violin(position="dodge") +
@@ -1094,10 +1077,10 @@ gg.spec.x <- ggplot(spec.x.df, aes(method, size)) +
                      expand=expansion(mult=c(0.05,0.15))) +
   scale_fill_manual(values=classnodes$colour[match(sort(unique(spec.x.df$class)), classnodes$class)]) +
   guides(fill=guide_legend(override.aes=list(alpha=0.5))) +
-  labs(x="Method of genome size inference", y="Genome size (Mbp)", col="", fill="", size=2) +
-  theme(strip.text=element_text(face="bold.italic", size=8),
-        axis.title.x=element_text(margin=margin(t=20, r=0, b=0, l=0)),
-        axis.title.y=element_text(margin=margin(t=0, r=20, b=0, l=0)),
+  labs(x="Method of genome size inference", y="Genome size (Mbp/1C)", col="", fill="", size=2) +
+  theme(strip.text=element_text(face="bold.italic", size=7.3),
+        axis.title.x=element_text(margin=margin(t=10, r=0, b=0, l=0)),
+        axis.title.y=element_text(margin=margin(t=0, r=10, b=0, l=0)),
         axis.text.x=element_text(size=rel(0.7), angle=45, hjust=1),
         legend.position="top",
         legend.box="vertical",
@@ -1105,7 +1088,7 @@ gg.spec.x <- ggplot(spec.x.df, aes(method, size)) +
         legend.key=element_blank(),
         plot.title.position="plot",
         plot.margin=unit(c(0,0,0,0), "mm")) +
-  labs(subtitle=expression(bold("b")))
+  labs(subtitle=expression(bold("B")))
 
 #Create list for colours of species depending on class
 spec.x.cols <- list()
@@ -1134,11 +1117,13 @@ for (i in stripr) {
 
 #Plot species-level comparison together
 tiff(file=paste0("Fig2_speccomparison_", Sys.Date(), ".tiff"), height=8, width=10, units="in", res=300)
-grid.arrange(gg.spec1, gg.spec.x1, heights=c(1.1, 1))
+grid.arrange(gg.spec1, gg.spec.x1, heights=c(1.15, 1))
 dev.off()
 
 
+############################
 ## SUPPLEMENTARY FIGURE 2 ##
+############################
 
 #Combine species dataframes not shown in Fig2a with both cytometric and assembly-based methods
 spec.supp.df <- do.call("rbind", mget(paste0(abb[is.na(match(abb, species.mainfig))], ".methods.df")))
@@ -1174,17 +1159,11 @@ for (i in 1:length(species.suppfig)) {
 
 #Make sizes numeric
 spec.supp.df$size <- as.numeric(spec.supp.df$size)
-#Make dataframe of species and their sizes to sort by size
-spec.supp.order <- data.frame(species=unique(spec.supp.df$species, max=NA))
 
-for (i in 1:length(spec.supp.order$species)) {
-  spec.supp.order$max[i] <- max(spec.supp.df$size[spec.supp.df$species == spec.supp.order$species[i]])
+for (i in 1:length(spec.supp.df$species)) {
+  spec.supp.df$species[i] <- paste0(spec.supp.df$species[i], ", ", tax.df$Order[match(word(spec.supp.df$species[i], 1), tax.df$Genus)], ", ", tax.df$Class[match(word(spec.supp.df$species[i], 1), tax.df$Genus)])
 }
 
-#Sort species in order of size (low to high)
-spec.supp.order <- spec.supp.order[order(spec.supp.order$max),]
-#Sort main dataframe by size
-spec.supp.df <- spec.supp.df[order(factor(spec.supp.df$species, levels=unique(spec.supp.order$species))),]
 
 #Assign species to rows of 5 each for plot
 rows <- rep(c(1:ceiling(length(unique(spec.supp.df$species)) / 5)),
@@ -1214,18 +1193,18 @@ for (i in 1:ceiling(length(unique(spec.supp.df$species)) / 5)) {
     facet_grid(. ~ species,
                scales="free",
                space="free",
-               labeller=label_wrap_gen(width=7)) +
+               labeller=label_wrap_gen(width=30)) +
     geom_text(data=labels.supp.df[labels.supp.df$row == i,],
               vjust=-1,
               size=2,
               aes(x=method, y=max, label=count),
               inherit.aes=FALSE) +
-    labs(y="Genome size (Mbp)", col="", size=2) +
+    labs(y="Genome size (Mbp/1C)", col="", size=2) +
     scale_y_continuous(limits=c(0, max(spec.supp.df$size) + 5),
                        breaks=seq(20, max(spec.supp.df$size), 20),
                        expand=expansion(mult=c(0.05,0.05))) +
     scale_color_manual(labels=c("Genome assembly", "Cytometric"), values=c("black", "red")) +
-    theme(strip.text=element_text(face="italic", size=8),
+    theme(strip.text=element_text(face="italic", size=6),
           axis.title.x=element_blank(),
           axis.title.y=element_text(margin=margin(t=0, r=20, b=0, l=0)),
           axis.text.x=element_text(size=rel(0.7), angle=45, hjust=1),
@@ -1248,4 +1227,139 @@ gg.spec.supp <- annotate_figure(gg.spec.supp,
 #Write to file
 tiff(file=paste0("SuppFig2_speccomparisonextra_", Sys.Date(), ".tiff"), height=12, width=8, units="in", res=300)
 plot(gg.spec.supp)
+dev.off()
+
+
+####################
+## STATS FOR TEXT ##
+####################
+
+#Mean for cytometric methods
+mean(no.CS.df2$size)
+#Number of estimates
+length(no.CS.df2$size)
+#Number of species included
+length(unique(paste0(no.CS.df$GENUS, no.CS.df$SPECIES)))
+#Number/proportion of orders without cytometric genome size data
+paste0(length(tax.df3$order[tax.df3$noCS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$noCS == "N"])) / length(tax.df3$order) * 100,"%")
+#Number/proportion of classes without cytometric genome size data
+paste0(length(class.df[-20,]$class[class.df[-20,]$noCS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$noCS == "N"])) / length(class.df[-20,]$class) * 100,"%")
+
+#Mean for assembly methods
+mean(CS.df2$size)
+#Number of estimates
+length(CS.df2$size)
+#Number of strains included
+length(unique(c(ncbi$X.Organism.Name, myc$Name)))
+#Number/proportion of orders without assembly-based genome size data
+paste0(length(tax.df3$order[tax.df3$CS == "N"]), "/",length(tax.df3$order), ", ", (length(tax.df3$order[tax.df3$CS == "N"])) / length(tax.df3$order) * 100,"%")
+#Number/proportion of classes without assembly-based genome size data
+paste0(length(class.df[-20,]$class[class.df[-20,]$CS == "N"]), "/",length(class.df[-20,]$class), ", ", (length(class.df[-20,]$class[class.df[-20,]$CS == "N"])) / length(class.df[-20,]$class) * 100,"%")
+
+#Which orders have significantly bigger mean genome estimates from assembly
+sig[sig$CS > sig$noCS & sig$pvalue < 0.05,]
+
+
+########################
+## GRAPHICAL ABSTRACT ##
+########################
+
+#Filter species-level comparisons for 1 from each class
+spec.abs.df <- spec.df[spec.df$species == "Aspergillus niger" | spec.df$species == "Sporothrix schenckii" | spec.df$species == "Venturia inaequalis",]
+tukey.abs.df <- tukey.df[tukey.df$species == "Aspergillus niger" | tukey.df$species == "Sporothrix schenckii" | tukey.df$species == "Venturia inaequalis",]
+mean.abs.df <- mean.df[mean.df$species == "Aspergillus niger" | mean.df$species == "Sporothrix schenckii" | mean.df$species == "Venturia inaequalis",]
+labels.abs.df <- labels.df[labels.df$species == "Aspergillus niger" | labels.df$species == "Sporothrix schenckii" | labels.df$species == "Venturia inaequalis",]
+
+#Facet boxplot of genome sizes for each species
+gg.spec.abs <- ggplot(spec.abs.df, aes(method, size)) +
+  geom_hline(data=mean.abs.df, 
+             linetype="dashed", 
+             aes(yintercept=mean)) +
+  geom_violin(aes(color=type),
+              show.legend=FALSE) +
+  geom_boxplot(aes(color=type),
+               width=0.2,
+               outlier.size=2) +
+  geom_point(aes(fill=class),
+             shape=22,
+             colour="white",
+             size=5,
+             alpha=0) +
+  facet_grid(. ~ species,
+             scales="free",
+             space="free",
+             labeller=label_wrap_gen(width=8)) +
+  scale_y_continuous(breaks=seq(20, max(spec.df$size) + 10, 20),
+                     expand=expansion(mult=c(0.05,0.2))) +
+  scale_color_manual(labels=c("Genome assembly", "Cytometric"), values=c("black", "red")) +
+  scale_fill_manual(values=classnodes$colour[match(sort(unique(spec.df$class)), classnodes$class)]) +
+  labs(x="", y="Genome size (Mbp/1C)", col="", fill="", size=2) +
+  guides(fill=guide_legend(override.aes=list(alpha=0.5))) +
+  theme(strip.text=element_text(face="bold.italic", size=15),
+        axis.title.y=element_text(size=22, margin=margin(t=0, r=10, b=0, l=0)),
+        axis.text.y=element_text(size=12),
+        axis.text.x=element_text(size=10, angle=45, hjust=1),
+        legend.position="top",
+        legend.box="vertical",
+        legend.text=element_text(size=15),
+        legend.margin=margin(0,0,0,0),
+        legend.key=element_blank(),
+        plot.title.position="plot",
+        plot.margin=unit(c(5,5,0,0), "mm"),
+        plot.background = element_rect(fill="transparent", colour=NA))
+
+#Create list for colours of species depending on class
+spec.abs.cols <- list()
+
+for (i in 1:length(unique(spec.abs.df$species))) {
+  spec.abs.cols[[i]] <- classnodes$colour[match(as.character(tax.df$Class[grep(word(unique(spec.abs.df$species), 1)[i], tax.df$Genus)]), classnodes$class)]
+}
+
+#Convert list to vector
+spec.abs.cols <- unlist(spec.abs.cols)
+#Adjust transparency
+spec.abs.cols <- adjustcolor(spec.abs.cols, alpha.f = 0.5)
+
+#Convert plot to gtable
+gg.spec.abs1 <- ggplot_gtable(ggplot_build(gg.spec.abs))
+#Find facet strips
+stripr <- which(grepl('strip-t', gg.spec.abs1$layout$name))
+#Replace strip colours according to class vector
+k <- 1
+for (i in stripr) {
+  j <- which(grepl('rect', gg.spec.abs1$grobs[[i]]$grobs[[1]]$childrenOrder))
+  gg.spec.abs1$grobs[[i]]$grobs[[1]]$children[[j]]$gp$fill <- spec.abs.cols[k]
+  k <- k+1
+}
+
+
+#Create circular tree of Ascomycota taxonomy
+gg.abs.tree <- ggtree(asc.tree, 
+                      layout="circular",
+                      size=0.3) +
+  xlim(0, 3)
+
+for (i in 1:length(na.omit(branches[branches$colour != "",])$node)) {
+  gg.abs.tree <- gg.abs.tree +
+    geom_hilight(node=na.omit(branches[branches$colour != "",])$node[i],
+                 extend=1.7,
+                 alpha=0.1, fill=na.omit(branches[branches$colour != "",])$colour[i])
+}
+
+gg.abs.tree1 <- gg.abs.tree %<+% tax.df3 +
+  geom_tiplab(size=2.5,
+              aes(subset=noCS != "Y", colour=CS)) +
+  geom_tiplab(size=2.5,
+              aes(subset=noCS == "Y", colour=CS), fontface="bold.italic") +
+  geom_label(x=0, y=0, label="Ascomycota", fill="white", fontface="bold") +
+  geom_text(x=4.5, y=19.5, label="Genome assembly") +
+  geom_text(x=4.5, y=17.5, label="No genome assembly", colour="darkgrey") +
+  geom_text(x=4.5, y=15, label="Cytometric genome size", fontface="bold.italic") +
+  geom_text(x=4.5, y=13, label="No cytometric genome size") +
+  scale_colour_manual(values=c("darkgrey", "black")) +
+  theme(legend.position="none")
+
+#Write to file
+tiff(file=paste0("Graphical-abstract_", Sys.Date(), ".tiff"), height=5, width=12.5, units="in", res=300)
+ggarrange(gg.abs.tree1, gg.spec.abs1, nrow=1, widths=c(1, 1.3))
 dev.off()
