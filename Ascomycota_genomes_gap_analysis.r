@@ -9,23 +9,24 @@
 ##This script uses some webpage scraping, so results will differ as new data becomes available##
 ##CS = genome assemblies, noCS = cytometric##
 
-library(ape)
-library(cowplot)
-library(dplyr)
-library(DescTools)
-library(rvest)
-library(ggplot2)
-library(ggpubr)
-library(ggstance)
-library(ggtree)
-library(grid)
-library(gridExtra)
-library(gtable)
-library(multcompView)
-library(RCurl)
-library(scales)
-library(stringr)
-library(taxize)
+#Written in R v4.0.2
+library(ape)          #5.4-1
+library(cowplot)      #1.1.0
+library(DescTools)    #0.99.38
+library(dplyr)        #1.0.2
+library(ggplot2)      #3.3.2
+library(ggpubr)       #0.4.0
+library(ggstance)     #0.3.4
+library(ggtree)       #2.3.4
+library(grid)         #4.0.2
+library(gridExtra)    #2.3
+library(gtable)       #0.3.0
+library(multcompView) #0.1-8
+library(RCurl)        #1.98-1.2
+library(rvest)        #0.3.6
+library(scales)       #1.1.1
+library(stringr)      #1.4.0
+library(taxize)       #0.9.99
 
 
 ##############
@@ -867,6 +868,8 @@ for (i in 1:length(unique(no.CS.df$name))) {
 
 #Remove unknown species (i.e. sp.)
 species.comp <- species.comp[-grep("\\bsp\\b", names(species.comp))]
+#Print number of species-level comparisons possible
+length(species.comp)
 #Make vector of abbreviations
 abb <- abbreviate(names(species.comp), minlength=3)
 
@@ -917,9 +920,6 @@ for (i in 1:length(species.comp)) {
   #Rename with abbreviation
   assign(paste0(abb[i],".methods.df"), methods.df)
 }
-
-#Print number of species-level comparisons possible
-length(species.comp)
 
 #Combine all methods dataframes
 all.methods.df <- do.call("rbind", mget(paste0(abb, ".methods.df")))
@@ -1159,6 +1159,7 @@ rownames(all.x.methods.df) <- NULL
 all.x.methods.df$method[grep("allpaths lg", all.x.methods.df$method, ignore.case=TRUE)] <- "ALLPATHS-LG"
 all.x.methods.df$method[grep("A5", all.x.methods.df$method, ignore.case=TRUE)] <- "A5-miseq"
 all.x.methods.df$method[grep("idba ud", all.x.methods.df$method, ignore.case=TRUE)] <- "IDBA-UD"
+all.x.methods.df$method[grep("idba hybrid", all.x.methods.df$method, ignore.case=TRUE)] <- "IDBA-Hybrid"
 all.x.methods.df$method[grep("bowtie-2", all.x.methods.df$method, ignore.case=TRUE)] <- "bowtie2"
 all.x.methods.df$method[grep("\\bgs", all.x.methods.df$method, ignore.case=TRUE)] <- "Newbler"
 all.x.methods.df$method[grep("smrt", all.x.methods.df$method, ignore.case=TRUE)] <- "SMRT Analysis"
