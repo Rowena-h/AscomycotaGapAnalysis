@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this, please cite it as below."
+authors:
+- family-names: "Hill"
+  given-names: "Rowena"
+  orcid: "https://orcid.org/0000-0002-1046-5528"
+- family-names: "Leitch"
+  given-names: "Ilia J."
+- family-names: "Gaya"
+  given-names: "Ester"
+title: "Ascomycota Gap Analysis"
+url: "https://github.com/Rowena-h/AscomycotaGapAnalysis"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Hill"
+    given-names: "Rowena"
+    orcid: "https://orcid.org/0000-0002-1046-5528"
+  - family-names: "Leitch"
+    given-names: "Ilia J."
+  - family-names: "Gaya"
+    given-names: "Ester"
+  doi: "10.1016/j.fbr.2021.03.003"
+  journal: "Fungal Biology Reviews"
+  month: 4
+  start: 52 # First page number
+  end: 59 # Last page number
+  title: "Targeting Ascomycota genomes: what and how big?"
+  volume: 36
+  year: 2021
